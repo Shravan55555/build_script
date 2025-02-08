@@ -19,11 +19,11 @@ success_msg() {
 }
 
 # Default values for ROM manifest URL, branch, device name, ROM name, build type, and whether to remove prebuilts
-ROM_MANIFEST_URL=${1:-"https://github.com/crdroidandroid/android.git"}
-ROM_BRANCH=${2:-"15.0"}
+ROM_MANIFEST_URL=${1:-"https://github.com/RisingOS-Revived/android"}
+ROM_BRANCH=${2:-"fifteen"}
 DEVICE_NAME=${3:-"RMX1901"}
 ROM_NAME=${4:-"lineage"}
-CONFIG_TYPE=${5:-"ap3a"}
+CONFIG_TYPE=${5:-"ap4a"}
 BUILD_TYPE=${6:-"user"}
 REMOVE_PREBUILTS=${7:-"no"}  # Accept 'yes' or 'no' to remove prebuilts
 
@@ -71,9 +71,9 @@ rm -rf vendor/lineage-priv
 git clone https://github.com/shravansayz/private_keys.git -b rise vendor/lineage-priv
 success_msg "Keys generated successfully!"
 
-echo -e "${YELLOW}Cloning Custom...${NC}"
-wget https://raw.githubusercontent.com/custom-crdroid/custom_cr_setup/refs/heads/15.0/vendorsetup.sh
-bash vendorsetup.sh
+#echo -e "${YELLOW}Cloning Custom...${NC}"
+#wget https://raw.githubusercontent.com/custom-crdroid/custom_cr_setup/refs/heads/15.0/vendorsetup.sh
+#bash vendorsetup.sh
 
 # Set up the build environment and lunch for the specific device
 echo -e "${BLUE}Configuring build environment...${NC}"
