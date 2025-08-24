@@ -1,4 +1,9 @@
 #!/bin/bash
+
+# Local TimeZone
+sudo rm -rf /etc/localtime
+sudo ln -s /usr/share/zoneinfo/Asia/Dhaka /etc/localtime
+
 rm -rf .repo/local_manifests && \
 repo init -u https://github.com/AxionAOSP/android.git -b lineage-23.0 --git-lfs && \
 git clone https://github.com/shravansayz/local_manifests.git --depth 1 -b axion .repo/local_manifests && \
