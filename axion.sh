@@ -2,7 +2,7 @@
 
 rm -rf .repo/local_manifests && \
 repo init -u https://github.com/DerpFest-AOSP/android_manifest.git -b 16 --git-lfs && \
-git clone https://github.com/shravansayz/local_manifests.git --depth 1 -b derp16 .repo/local_manifests && \
+git clone https://github.com/Shravan55555/local_manifest.git --depth 1 -b main .repo/local_manifests && \
 /opt/crave/resync.sh && \
 export BUILD_USERNAME=shravan ; \
 export BUILD_HOSTNAME=crave ; \
