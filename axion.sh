@@ -11,4 +11,4 @@ wget https://github.com/shravansayz/local_manifests/raw/keys/keys.zip && unzip -
 source build/envsetup.sh && \
 lunch lineage_RMX1901-bp2a-user && \
 make installclean ; \
-mka derp
+derpfest RMX1901
