@@ -1,8 +1,11 @@
 #!/bin/bash
 
+# Exit on any error
+set -e
+
 # Remove existing local manifests and initialize repo
-rm -rf .repo/local_manifests && \
-repo init -u https://github.com/AxionAOSP/android.git -b lineage-23.0 --git-lfs && \
+rm -rf .repo/local_manifests
+repo init -u https://github.com/AxionAOSP/android.git -b lineage-23.0 --git-lfs
 
 # Create local manifests directory and manifest file
 mkdir -p .repo/local_manifests
@@ -45,7 +48,8 @@ cat > .repo/local_manifests/local_manifest.xml << 'EOF'
 EOF
 
 # Sync repositories
-/opt/crave/resync.sh && \
+echo "Syncing repositories..."
+/opt/crave/resync.sh
 
 # Set build environment variables
 export BUILD_USERNAME=shravan
@@ -53,7 +57,9 @@ export BUILD_HOSTNAME=android-build
 export TZ=Asia/Kolkata
 
 # Setup build environment and start build
-source build/envsetup.sh && \
-axion RMX1901 userdebug gms pico && \
+echo "Setting up build environment..."
+source build/envsetup.sh
+echo "Starting build for RMX1901..."
+axion RMX1901 userdebug gms pico
 make installclean
 ax -br
