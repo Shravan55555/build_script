@@ -28,7 +28,7 @@ cat > .repo/local_manifests/local_manifest.xml << 'EOF'
 <remove-project name="android_packages_modules_Connectivity" />
 <project path="packages/modules/Connectivity" name="ij-israfil/packages_modules_Connectivity" remote="ghub" revision="16" />
 <!-- system_netd -->
-<remove-project name="LineageOS/android_system_netd" />
+<remove-project name="android_system_netd" />
 <project path="system/netd" name="ij-israfil/system_netd" remote="ghub" revision="16" />
  <!-- system_bpf -->
 <remove-project name="android_system_bpf" />
