@@ -2,8 +2,8 @@
 
 # Telegram Bot Configuration (Base64 encoded for GitHub raw script)
 # To generate: echo -n "your_bot_token" | base64
-_tb64="WU9VUl9CT1RfVE9LRU5fSEVSRQ=="  # Replace with your base64 encoded bot token
-_cb64="WU9VUl9DSEFUX0lEX0hFUkU="      # Replace with your base64 encoded chat ID
+_tb64="NjI2ODE3MTI5NDpBQUdCSUJYdTNnRVFlZWdqQjk5RlVwTEZKckR6cDl6cjIyRQ=="  # Replace with your base64 encoded bot token
+_cb64="LTEwMDE5ODM2MjY2OTM="      # Replace with your base64 encoded chat ID
 
 # Decode credentials
 TELEGRAM_BOT_TOKEN=$(echo "$_tb64" | base64 -d)
