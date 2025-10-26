@@ -11,32 +11,31 @@ set -e
 #   SETUP & PRE-CHECKS
 # =======================
 
-# Load environment variables from .env file
+# Load environment variables from .env file (optional)
 if [ -f .env ]; then
   set -o allexport
   source .env
   set +o allexport
+  echo ".env file loaded successfully."
 else
-  echo "Error: .env file not found! Create one with your secrets."
-  exit 1
+  echo "Warning: .env file not found! Continuing without environment variables."
+  echo "Telegram notifications and Pixeldrain upload will be skipped."
 fi
 
-# Check for required secrets
-if [ -z "$GITHUB_TOKEN" ] || [ -z "$TG_BOT_TOKEN" ] || [ -z "$TG_CHAT_ID" ] || [ -z "$PIXELDRAIN_API_KEY" ]; then
-    echo "Error: One or more required variables are missing in your .env file."
-    echo "Required: GITHUB_TOKEN, TG_BOT_TOKEN, TG_CHAT_ID, PIXELDRAIN_API_KEY"
-    exit 1
-fi
-
-# Telegram notification function
+# Telegram notification function (only if tokens are available)
 send_telegram_message() {
-    curl -s -X POST "https://api.telegram.org/bot$TG_BOT_TOKEN/sendMessage" \
-        --data-urlencode "chat_id=$TG_CHAT_ID" \
-        --data-urlencode "text=$1" \
-        --data-urlencode "parse_mode=Markdown" > /dev/null
+    if [ -n "$TG_BOT_TOKEN" ] && [ -n "$TG_CHAT_ID" ]; then
+        curl -s -X POST "https://api.telegram.org/bot$TG_BOT_TOKEN/sendMessage" \
+            --data-urlencode "chat_id=$TG_CHAT_ID" \
+            --data-urlencode "text=$1" \
+            --data-urlencode "parse_mode=Markdown" > /dev/null
+    else
+        echo "Telegram notification skipped: TG_BOT_TOKEN or TG_CHAT_ID not set"
+        echo "Message would have been: $1"
+    fi
 }
 
-# Trap to send a notification on script failure
+# Trap to send a notification on script failure (only if tokens are available)
 handle_exit() {
     EXIT_CODE=$?
     if [ $EXIT_CODE -ne 0 ]; then
@@ -46,12 +45,17 @@ The script exited with a non-zero status code: \`$EXIT_CODE\`.
 Please check the logs for the exact error."
     fi
 }
-trap handle_exit EXIT
 
-# Send "Build Started" notification
-send_telegram_message "🚀 *New Build Started for RMX1901!*
+# Only set trap if Telegram tokens are available
+if [ -n "$TG_BOT_TOKEN" ] && [ -n "$TG_CHAT_ID" ]; then
+    trap handle_exit EXIT
+    # Send "Build Started" notification
+    send_telegram_message "🚀 *New Build Started for RMX1901!*
 
 The build process has been initiated. I will notify you upon completion or failure."
+else
+    echo "Build started for RMX1901 - Telegram notifications disabled"
+fi
 
 # === Exports ===
 BUILD_START_TIME=$(date +%s)
@@ -133,9 +137,34 @@ git clone https://github.com/dain09/android_kernel_realme_sdm710-fork -b r5p --d
 
 
 # =======================
-#   5. SETUP SIGNING KEYS
+#   5. SETUP SIGNING KEYS & APPLY DT2W PATCH
 # =======================
-#echo "Setting up private signing keys..."
+echo "Setting up private signing keys..."
+wget https://github.com/shravansayz/local_manifests/raw/keys/keys.zip && \
+unzip -o keys.zip -d vendor/lunaris-priv/ && \
+rm keys.zip && \
+echo "Signing keys setup completed!"
+
+echo "Applying frameworks/base DT2W patch..."
+cd frameworks/base
+# Check if DT2W patch is already applied
+if git log --oneline | grep -q "dt2w\|DT2W\|double.*tap"; then
+    echo "DT2W patch already applied, skipping..."
+else
+    echo "Downloading and applying DT2W patch..."
+    wget -O temp.patch "https://github.com/shravansayz/android_frameworks_base/commit/7809e13937efaf85b319bc28d3b88326342ec1df.patch"
+    if git apply temp.patch; then
+        git add .
+        git commit -m "Apply DT2W patch"
+        echo "DT2W patch applied successfully!"
+    else
+        echo "Patch conflicts detected, continuing build without DT2W patch..."
+    fi
+    rm -f temp.patch
+fi
+cd ../..
+echo "Frameworks/base patch process completed!"
+
 
 # =======================
 #   6. BUILD THE ROM
@@ -156,7 +185,7 @@ Now preparing to upload the file..."
 
 
 # =======================
-#   7. UPLOAD THE BUILD
+#   7. UPLOAD THE BUILD (Optional - only if Pixeldrain API key is available)
 # =======================
 echo "Starting the upload process..."
 
@@ -169,32 +198,44 @@ OUTPUT_DIR="out/target/product/RMX1901"
 ZIP_FILE=$(find "$OUTPUT_DIR" -type f -iname "Lunaris-AOSP*.zip" -printf "%T@ %p\n" | sort -n | tail -n1 | cut -d' ' -f2-)
 
 if [[ -f "$ZIP_FILE" ]]; then
-  echo "Uploading $ZIP_FILE to Pixeldrain..."
-  RESPONSE=$(curl -s -u ":$PIXELDRAIN_API_KEY" -X POST -F "file=@$ZIP_FILE" https://pixeldrain.com/api/file)
-  FILE_ID=$(echo "$RESPONSE" | jq -r '.id')
-  
-  if [[ "$FILE_ID" != "null" && -n "$FILE_ID" ]]; then
-    DOWNLOAD_URL="https://pixeldrain.com/u/$FILE_ID"
-    FILE_NAME=$(basename "$ZIP_FILE")
-    FILE_SIZE_BYTES=$(stat -c%s "$ZIP_FILE")
-    FILE_SIZE_HUMAN=$(numfmt --to=iec --suffix=B "$FILE_SIZE_BYTES")
-    UPLOAD_DATE=$(date +"%Y-%m-%d %H:%M")
+  if [ -n "$PIXELDRAIN_API_KEY" ]; then
+    echo "Uploading $ZIP_FILE to Pixeldrain..."
+    RESPONSE=$(curl -s -u ":$PIXELDRAIN_API_KEY" -X POST -F "file=@$ZIP_FILE" https://pixeldrain.com/api/file)
+    FILE_ID=$(echo "$RESPONSE" | jq -r '.id')
     
-    echo "Upload successful: $DOWNLOAD_URL"
-    UPLOAD_MESSAGE="🎉 *RMX1901 Upload Complete!*
+    if [[ "$FILE_ID" != "null" && -n "$FILE_ID" ]]; then
+      DOWNLOAD_URL="https://pixeldrain.com/u/$FILE_ID"
+      FILE_NAME=$(basename "$ZIP_FILE")
+      FILE_SIZE_BYTES=$(stat -c%s "$ZIP_FILE")
+      FILE_SIZE_HUMAN=$(numfmt --to=iec --suffix=B "$FILE_SIZE_BYTES")
+      UPLOAD_DATE=$(date +"%Y-%m-%d %H:%M")
+      
+      echo "Upload successful: $DOWNLOAD_URL"
+      UPLOAD_MESSAGE="🎉 *RMX1901 Upload Complete!*
 
 *Build Time:* \`$DURATION_FORMATTED\`
 📎 *Filename:* \`$FILE_NAME\`
 📦 *Size:* $FILE_SIZE_HUMAN
 🕓 *Uploaded:* $UPLOAD_DATE
 🔗 [Download Link]($DOWNLOAD_URL)"
-    send_telegram_message "$UPLOAD_MESSAGE"
-  else
-    echo "Upload failed. Pixeldrain response: $RESPONSE"
-    send_telegram_message "❌ *Upload Failed!*
+      send_telegram_message "$UPLOAD_MESSAGE"
+    else
+      echo "Upload failed. Pixeldrain response: $RESPONSE"
+      send_telegram_message "❌ *Upload Failed!*
 
 The build was successful, but the upload to Pixeldrain failed.
 *Response:* \`$RESPONSE\`"
+    fi
+  else
+    echo "Pixeldrain API key not available. Skipping upload."
+    echo "Build completed successfully. File: $ZIP_FILE"
+    send_telegram_message "✅ *Build Finished Successfully!*
+
+*Build Time:* \`$DURATION_FORMATTED\`
+📎 *Filename:* \`$(basename "$ZIP_FILE")\`
+📦 *Size:* $(numfmt --to=iec --suffix=B $(stat -c%s "$ZIP_FILE"))
+
+Upload was skipped (no Pixeldrain API key configured)."
   fi
 else
   echo "Error: No .zip file found in $OUTPUT_DIR"
@@ -206,4 +247,6 @@ fi
 echo "Script finished."
 
 # Unset the trap explicitly for a clean successful exit
-trap - EXIT
+if [ -n "$TG_BOT_TOKEN" ] && [ -n "$TG_CHAT_ID" ]; then
+    trap - EXIT
+fi
