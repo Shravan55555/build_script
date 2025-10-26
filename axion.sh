@@ -55,7 +55,7 @@ The build process has been initiated. I will notify you upon completion or failu
 
 # === Exports ===
 BUILD_START_TIME=$(date +%s)
-export BUILD_USERNAME=ssk 
+export BUILD_USERNAME=shravan 
 export BUILD_HOSTNAME=crave
 
 
@@ -74,17 +74,10 @@ rm -rf prebuilts/clang/host/linux-x86/clang-proton
 rm -rf device/realme/RMX1901
 rm -rf vendor/realme/RMX1901
 rm -rf kernel/realme/sdm710
-#rm -rf packages/apps/ViPER4AndroidFX
-#rm -rf vendor/lineage-priv/keys
 
 echo "Performing selective cleanup of 'out' directory..."
-rm -rf out/soong
-rm -rf out/target/product/RMX1901/obj
-rm -rf out/target/product/RMX1901/gen
 rm -rf out/target/product/RMX1901/system
-rm -rf out/target/product/RMX1901/vendor
 rm -rf out/target/product/RMX1901/product
-
 echo "Cleanup finished."
 
 
@@ -129,7 +122,6 @@ echo "Applying cherry-picks for frameworks/base..."
     git fetch dain && \
     git cherry-pick f88def7b540da6cbeea1412f9f5387cc3de656ef)
 
-
 # =======================
 #   4. CLONING ADDITIONAL REPOSITORIES
 # =======================
@@ -144,22 +136,19 @@ git clone https://github.com/dain09/android_kernel_realme_sdm710-fork -b r5p --d
 #   5. SETUP SIGNING KEYS
 # =======================
 #echo "Setting up private signing keys..."
-#mkdir -p vendor/lineage-priv/keys
-#git clone https://${GITHUB_TOKEN}@github.com/dain09/Sign_keys vendor/lineage-priv/keys 
-
 
 # =======================
 #   6. BUILD THE ROM
 # =======================
 echo "Starting the build process..."
 source b*/env*
-lunch lineage_RMX1901-bp2a-userdebug
+lunch lineage_RMX1901-bp2a-user
 
 echo "Running 'm installclean' for a safe build..."
 m installclean
 
 echo "Starting the main build..."
-m lunaris -j$(nproc --all)
+m lunaris
 
 send_telegram_message "✅ *Build Finished Successfully!*
 
@@ -176,7 +165,7 @@ BUILD_END_TIME=$(date +%s)
 DURATION=$((BUILD_END_TIME - BUILD_START_TIME))
 DURATION_FORMATTED=$(printf '%dh:%dm:%ds\n' $(($DURATION/3600)) $(($DURATION%3600/60)) $(($DURATION%60)))
 
-OUTPUT_DIR="out/target/product/RMX1971"
+OUTPUT_DIR="out/target/product/RMX1901"
 ZIP_FILE=$(find "$OUTPUT_DIR" -type f -iname "Lunaris-AOSP*.zip" -printf "%T@ %p\n" | sort -n | tail -n1 | cut -d' ' -f2-)
 
 if [[ -f "$ZIP_FILE" ]]; then
