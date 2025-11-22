@@ -1,6 +1,6 @@
 #!/bin/bash
 rm -rf .repo/local_manifests && \
-repo init -u https://github.com/Evolution-X/manifest -b bka-q1 --git-lfs && \
+repo init -u https://github.com/Evolution-X/manifest -b bq1 --git-lfs && \
 git clone https://github.com/Shravan55555/local_manifest.git --depth 1 -b main .repo/local_manifests && \
 /opt/crave/resync.sh && \
 export BUILD_USERNAME=shravan && \
